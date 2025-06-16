@@ -1,82 +1,85 @@
-services:
-  postgres:
-    image: postgres:13
-    container_name: postgres_db
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydatabase
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+version: '3.8'
 
+services:
+  # Authentication Service
   auth-service:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
-    container_name: auth_service
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: user
-      DB_PASSWORD: password
-      DB_DATABASE: mydatabase
-      JWT_SECRET: your_jwt_secret
     ports:
-      - "3001:3000"
+      - "${AUTH_SERVICE_PORT}:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - db
+    volumes:
+      - ./services/auth-service:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
 
+  # CRM Service
   crm-service:
     build:
       context: ./services/crm-service
       dockerfile: Dockerfile
-    container_name: crm_service
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: user
-      DB_PASSWORD: password
-      DB_DATABASE: mydatabase
-      JWT_SECRET: your_jwt_secret
     ports:
-      - "3002:3000"
+      - "${CRM_SERVICE_PORT}:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - db
+    volumes:
+      - ./services/crm-service:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
 
+  # Sales Service
   sales-service:
     build:
       context: ./services/sales-service
       dockerfile: Dockerfile
-    container_name: sales_service
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: user
-      DB_PASSWORD: password
-      DB_DATABASE: mydatabase
-      JWT_SECRET: your_jwt_secret
     ports:
-      - "3003:3000"
+      - "${SALES_SERVICE_PORT}:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - db
+    volumes:
+      - ./services/sales-service:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
 
+  # Web Client (Next.js)
   web-client:
     build:
-      context: .
-      dockerfile: ./apps/web-client/Dockerfile
-    container_name: web_client
-    depends_on:
-      - auth-service
-      - crm-service
-      - sales-service
+      context: ./apps/web-client
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    depends_on:
+      - auth-service # Depends on a backend service to be useful
+    volumes:
+      - ./apps/web-client:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/.next
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  db:
+    image: postgres:13
     environment:
-      NEXT_PUBLIC_AUTH_API_URL: http://localhost:3001
-      NEXT_PUBLIC_CRM_API_URL: http://localhost:3002
-      NEXT_PUBLIC_SALES_API_URL: http://localhost:3003
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+
