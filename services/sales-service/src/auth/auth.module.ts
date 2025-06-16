@@ -1,21 +1,18 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { ConfigModule } from '@nestjs/config';
+import { JwtStrategy } from '@app/common'; // <-- Import from the common package
 
 @Module({
   imports: [
-    PassportModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-      }),
-      inject: [ConfigService],
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    // ConfigModule is needed because our shared JwtStrategy depends on ConfigService
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
   ],
-  providers: [JwtStrategy],
-  exports: [JwtStrategy, PassportModule],
+  // No controllers or custom services are needed here
+  providers: [JwtStrategy], // Only provide the strategy to validate incoming tokens
+  exports: [PassportModule],
 })
 export class AuthModule {}

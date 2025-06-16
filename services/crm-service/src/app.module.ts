@@ -1,29 +1,18 @@
 import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
 import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { CustomersModule } from './customers/customers.module';
-import { Customer } from './customers/entities/customer.entity';
+import { JwtStrategy } from '@app/common'; // <-- Import from the common package
 
 @Module({
   imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    // ConfigModule is needed because our shared JwtStrategy depends on ConfigService
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [Customer], 
-      synchronize: true, 
-    }),
-    AuthModule,
-    CustomersModule,
   ],
+  // No controllers or custom services are needed here
+  providers: [JwtStrategy], // Only provide the strategy to validate incoming tokens
+  exports: [PassportModule],
 })
-export class AppModule {}
-
-
+export class AuthModule {}
