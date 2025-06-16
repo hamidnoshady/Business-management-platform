@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      DB_DATABASE: mydatabase
+      JWT_SECRET: your_jwt_secret
+    ports:
+      - "3001:3000"
+
+  crm-service:
+    build:
+      context: ./services/crm-service
+      dockerfile: Dockerfile
+    container_name: crm_service
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      DB_DATABASE: mydatabase
+      JWT_SECRET: your_jwt_secret
+    ports:
+      - "3002:3000"
+
+  sales-service:
+    build:
+      context: ./services/sales-service
+      dockerfile: Dockerfile
+    container_name: sales_service
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      DB_DATABASE: mydatabase
+      JWT_SECRET: your_jwt_secret
+    ports:
+      - "3003:3000"
+
+  web-client:
+    build:
+      context: .
+      dockerfile: ./apps/web-client/Dockerfile
+    container_name: web_client
+    depends_on:
+      - auth-service
+      - crm-service
+      - sales-service
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_AUTH_API_URL: http://localhost:3001
+      NEXT_PUBLIC_CRM_API_URL: http://localhost:3002
+      NEXT_PUBLIC_SALES_API_URL: http://localhost:3003
+
+volumes:
+  postgres_data:

@@ -1,0 +1,15 @@
+# Git files
+.git
+.gitignore
+
+# Node modules
+node_modules
+*/node_modules
+
+# Next.js build output
+apps/web-client/.next
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
