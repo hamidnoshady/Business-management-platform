@@ -4,8 +4,8 @@ services:
   # Authentication Service
   auth-service:
     build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/auth-service/Dockerfile
     ports:
       - "${AUTH_SERVICE_PORT}:3000"
     environment:
