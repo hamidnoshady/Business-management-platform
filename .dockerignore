@@ -1,0 +1,23 @@
+# Git and operating system files
+.git
+.gitignore
+.DS_Store
+Thumbs.db
+
+# IDE and editor folders
+.vscode
+.idea
+
+# Log files and temporary files
+*.log
+npm-debug.log*
+yarn-error.log
+
+# Local environment variables
+.env
+.env.*
+!/.env.example
+
+# The root node_modules directory should not be copied.
+# Docker will run 'npm install' inside the container.
+node_modules

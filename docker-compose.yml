@@ -1,79 +1,75 @@
-version: '3.8'
-
 services:
-  # Authentication Service
+  # --- Local NPM Proxy ---
+  verdaccio:
+    image: verdaccio/verdaccio:5
+    ports:
+      - "4873:4873" # Default Verdaccio port
+    volumes:
+      - verdaccio_storage:/verdaccio/storage
+    restart: unless-stopped
+
+  # --- Backend Services ---
   auth-service:
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
     ports:
-      - "${AUTH_SERVICE_PORT}:3000"
+      - "8000:3000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - db
-    volumes:
-      - ./services/auth-service:/usr/src/app
-      - /usr/src/app/node_modules
+      - verdaccio # Depends on the proxy to be ready
     restart: unless-stopped
 
-  # CRM Service
   crm-service:
     build:
-      context: ./services/crm-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/crm-service/Dockerfile
     ports:
-      - "${CRM_SERVICE_PORT}:3000"
+      - "8001:3000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - db
-    volumes:
-      - ./services/crm-service:/usr/src/app
-      - /usr/src/app/node_modules
+      - verdaccio
     restart: unless-stopped
 
-  # Sales Service
   sales-service:
     build:
-      context: ./services/sales-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/sales-service/Dockerfile
     ports:
-      - "${SALES_SERVICE_PORT}:3000"
+      - "8002:3000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - db
-    volumes:
-      - ./services/sales-service:/usr/src/app
-      - /usr/src/app/node_modules
+      - verdaccio
     restart: unless-stopped
 
-  # Web Client (Next.js)
+  # --- Frontend Service ---
   web-client:
     build:
-      context: ./apps/web-client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web-client/Dockerfile
     ports:
       - "3000:3000"
     depends_on:
-      - auth-service # Depends on a backend service to be useful
-    volumes:
-      - ./apps/web-client:/usr/src/app
-      - /usr/src/app/node_modules
-      - /usr/src/app/.next
+      - auth-service
+      - verdaccio
     restart: unless-stopped
 
-  # PostgreSQL Database
+  # --- Database Service ---
   db:
     image: postgres:13
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -82,4 +78,4 @@ services:
 
 volumes:
   postgres_data:
-
+  verdaccio_storage:

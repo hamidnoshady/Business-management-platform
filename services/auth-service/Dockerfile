@@ -1,40 +1,37 @@
-# Stage 1: Builder
-# This stage installs all dependencies, builds the entire monorepo,
-# which is simpler and less prone to path errors.
-FROM node:18-alpine AS builder
+# ---- Base Stage ----
+# A common base for all subsequent stages
+FROM node:18-alpine AS base
 WORKDIR /usr/src/app
 
-# Copy the entire project context.
-# Ensure your .dockerignore file does not exclude 'packages' or 'services'.
-# This command copies everything from your local project root into the container's /usr/src/app directory.
+# ---- Dependencies Stage ----
+# This stage is dedicated to installing dependencies via the local proxy
+FROM base AS dependencies
+COPY package.json package-lock.json* ./
+# Copy all workspace package.json files to understand the full dependency tree
+COPY apps/components/package.json ./apps/components/
+COPY apps/stores/package.json ./apps/stores/
+COPY apps/web-client/package.json ./apps/web-client/
+COPY packages/common/package.json ./packages/common/
+COPY services/auth-service/package.json ./services/auth-service/
+COPY services/crm-service/package.json ./services/crm-service/
+COPY services/sales-service/package.json ./services/sales-service/
+# Use the local Verdaccio registry to install dependencies reliably
+RUN npm install --registry http://verdaccio:4873 --legacy-peer-deps
+
+# ---- Builder Stage ----
+# This stage builds the application code
+FROM base AS builder
+COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 COPY . .
-
-# Install all dependencies for all workspaces using the root package.json.
-RUN npm install --legacy-peer-deps
-
-# Build the specific workspace.
-# IMPORTANT: Change 'auth-service' to the correct workspace name for each service.
-# (e.g., 'crm-service', 'sales-service', 'web-client')
 RUN npm run build --workspace=auth-service
 
-# Stage 2: Production Runner
-# This stage creates a minimal final image with only what's needed to run.
-FROM node:18-alpine AS runner
+# ---- Production Runner Stage ----
+# This is the final, minimal, and optimized image
+FROM base as runner
 WORKDIR /usr/src/app
-
-# From the builder stage, copy the production node_modules.
-# The node_modules directory is at the root of the project inside the builder container.
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-
-# From the builder stage, copy the specific build output for the service.
-# The build output for 'auth-service' is located at this specific path inside the builder container.
-# IMPORTANT: For 'crm-service', change the path to '/usr/src/app/services/crm-service/dist'.
-# For 'sales-service', change it to '/usr/src/app/services/sales-service/dist'.
+COPY --from=dependencies /usr/src/app/package.json ./
+COPY --from=dependencies /usr/src/app/services/auth-service/package.json ./services/auth-service/
+# Use the local proxy again for a fast and reliable production install
+RUN npm install --registry http://verdaccio:4873 --production --legacy-peer-deps
 COPY --from=builder /usr/src/app/services/auth-service/dist ./dist
-
-# Copy the root package.json. This is needed for npm to understand the project structure.
-COPY --from=builder /usr/src/app/package.json .
-
-# The command to run the application.
-# It executes the 'main.js' file from the 'dist' folder we created above.
-CMD ["node", "dist/main.js"]
+CMD [ "node", "dist/main.js" ]
