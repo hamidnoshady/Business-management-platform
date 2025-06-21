@@ -1,0 +1,39 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/web-client/src",
+  "monorepo": true,
+  "root": ".",
+  "compilerOptions": {
+    "webpack": true,
+    "plugins": ["@nestjs/swagger"]
+  },
+  "projects": {
+    "auth-service": {
+      "type": "application",
+      "root": "services/auth-service",
+      "entryFile": "main",
+      "sourceRoot": "services/auth-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "services/auth-service/tsconfig.build.json"
+      }
+    },
+    "crm-service": {
+      "type": "application",
+      "root": "services/crm-service",
+      "entryFile": "main",
+      "sourceRoot": "services/crm-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "services/crm-service/tsconfig.build.json"
+      }
+    },
+    "sales-service": {
+      "type": "application",
+      "root": "services/sales-service",
+      "entryFile": "main",
+      "sourceRoot": "services/sales-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "services/sales-service/tsconfig.build.json"
+      }
+    }
+  }
+}

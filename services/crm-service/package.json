@@ -1,7 +1,7 @@
 {
   "name": "crm-service",
   "version": "0.0.1",
-  "description": "",
+  "description": "Customer Relationship Management (CRM) service.",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -20,6 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",
@@ -33,9 +35,12 @@
     "pg": "^8.11.5",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.0",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {
+    "webpack": "^5.92.1",
+    "@nestjs/swagger": "^7.3.1",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",

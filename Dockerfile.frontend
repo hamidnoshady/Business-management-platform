@@ -14,6 +14,12 @@ COPY services/auth-service/package.json ./services/auth-service/
 COPY services/crm-service/package.json ./services/crm-service/
 COPY services/sales-service/package.json ./services/sales-service/
 
+# Explicitly unset any proxy settings that might be inherited from the host environment.
+RUN npm config delete proxy
+RUN npm config delete https-proxy
+# Set the registry to a reliable public mirror to bypass network issues.
+RUN npm config set registry https://registry.npmmirror.com/
+
 # اجرای npm ci برای نصب تمیز وابستگی‌ها
 RUN npm ci --legacy-peer-deps
 
