@@ -1,81 +1,166 @@
 services:
-  # --- Local NPM Proxy ---
-  verdaccio:
-    image: verdaccio/verdaccio:5
+  # ------ سرویس‌های پایگاه داده ------
+  postgres-auth:
+    image: postgres:13
+    container_name: postgres-auth
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: auth_db
     ports:
-      - "4873:4873" # Default Verdaccio port
+      - "5431:5432"
     volumes:
-      - verdaccio_storage:/verdaccio/storage
-    restart: unless-stopped
+      - auth_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - business_platform_net
 
-  # --- Backend Services ---
+  postgres-crm:
+    image: postgres:13
+    container_name: postgres-crm
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: crm_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - crm_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d crm_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - business_platform_net
+
+  postgres-sales:
+    image: postgres:13
+    container_name: postgres-sales
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: sales_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - sales_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d sales_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - business_platform_net
+
+  # ------ سرویس‌های بک‌اند ------
   auth-service:
     build:
       context: .
-      dockerfile: services/auth-service/Dockerfile
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE_NAME: auth-service
+    command: npm run start:dev --workspace=auth-service
     ports:
-      - "8000:3000"
+      - "3001:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_HOST=postgres-auth
+      - DATABASE_PORT=5432
+      - DATABASE_USER=admin
+      - DATABASE_PASSWORD=admin
+      - DATABASE_NAME=auth_db
+      - JWT_SECRET=aVeryStrongAndSecretKey123!@#ChangeMe
+      - PORT=3000
     depends_on:
-      - db
-      - verdaccio # Depends on the proxy to be ready
-    restart: unless-stopped
+      postgres-auth:
+        condition: service_healthy
+    networks:
+      - business_platform_net
 
   crm-service:
     build:
       context: .
-      dockerfile: services/crm-service/Dockerfile
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE_NAME: crm-service
+    command: npm run start:dev --workspace=crm-service
     ports:
-      - "8001:3000"
+      - "3002:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_HOST=postgres-crm
+      - DATABASE_PORT=5432
+      - DATABASE_USER=admin
+      - DATABASE_PASSWORD=admin
+      - DATABASE_NAME=crm_db
+      - JWT_SECRET=aVeryStrongAndSecretKey123!@#ChangeMe
+      - PORT=3000
     depends_on:
-      - db
-      - verdaccio
-    restart: unless-stopped
+      postgres-crm:
+        condition: service_healthy
+    networks:
+      - business_platform_net
 
   sales-service:
     build:
       context: .
-      dockerfile: services/sales-service/Dockerfile
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE_NAME: sales-service
+    command: npm run start:dev --workspace=sales-service
     ports:
-      - "8002:3000"
+      - "3003:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_HOST=postgres-sales
+      - DATABASE_PORT=5432
+      - DATABASE_USER=admin
+      - DATABASE_PASSWORD=admin
+      - DATABASE_NAME=sales_db
+      - JWT_SECRET=aVeryStrongAndSecretKey123!@#ChangeMe
+      - PORT=3000
     depends_on:
-      - db
-      - verdaccio
-    restart: unless-stopped
+      postgres-sales:
+        condition: service_healthy
+    networks:
+      - business_platform_net
 
-  # --- Frontend Service ---
+  # ------ سرویس فرانت‌اند ------
   web-client:
     build:
       context: .
-      dockerfile: apps/web-client/Dockerfile
+      dockerfile: Dockerfile.frontend
+    command: npm run dev --workspace=web-client
     ports:
       - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - auth-service
-      - verdaccio
-    restart: unless-stopped
+      - crm-service
+      - sales-service
+    networks:
+      - business_platform_net
 
-  # --- Database Service ---
-  db:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
+# ------ تعریف Volume ها برای نگهداری داده‌ها ------
 volumes:
-  postgres_data:
-  verdaccio_storage:
+  auth_db_data:
+  crm_db_data:
+  sales_db_data:
+
+# ------ تعریف شبکه مشترک ------
+networks:
+  business_platform_net:
+    driver: bridge

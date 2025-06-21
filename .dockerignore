@@ -1,23 +1,23 @@
-# Git and operating system files
-.git
-.gitignore
+# نادیده گرفتن وابستگی‌های نصب شده روی سیستم محلی
+node_modules
+apps/**/node_modules
+packages/**/node_modules
+services/**/node_modules
+
+# نادیده گرفتن فایل‌های لاگ npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# نادیده گرفتن پوشه‌های build
+dist
+apps/**/dist
+packages/**/dist
+services/**/dist
+apps/**/.next
+
+# فایل‌های مربوط به سیستم عامل و IDE
 .DS_Store
 Thumbs.db
-
-# IDE and editor folders
-.vscode
 .idea
-
-# Log files and temporary files
-*.log
-npm-debug.log*
-yarn-error.log
-
-# Local environment variables
-.env
-.env.*
-!/.env.example
-
-# The root node_modules directory should not be copied.
-# Docker will run 'npm install' inside the container.
-node_modules
+.vscode

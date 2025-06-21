@@ -1,0 +1,56 @@
+# Dockerfile نهایی و خودکفا برای سرویس‌های بک‌اند (NestJS)
+
+# --- STAGE 1: Dependencies ---
+# در این مرحله، وابستگی‌ها به صورت امن و ایزوله در داخل کانتینر نصب می‌شوند.
+FROM node:18-alpine AS dependencies
+WORKDIR /usr/src/app
+
+# کپی کردن تمام فایل‌های package.json برای نصب یکپارچه
+COPY package.json package-lock.json* ./
+COPY apps/components/package.json ./apps/components/
+COPY apps/stores/package.json ./apps/stores/
+COPY apps/web-client/package.json ./apps/web-client/
+COPY packages/common/package.json ./packages/common/
+COPY services/auth-service/package.json ./services/auth-service/
+COPY services/crm-service/package.json ./services/crm-service/
+COPY services/sales-service/package.json ./services/sales-service/
+
+# اجرای npm ci برای نصب تمیز و سریع وابستگی‌ها
+RUN npm ci --legacy-peer-deps
+
+
+# --- STAGE 2: Builder ---
+# در این مرحله، سورس کد با استفاده از وابستگی‌های نصب شده، بیلد می‌شود.
+FROM node:18-alpine AS builder
+ARG SERVICE_NAME
+WORKDIR /usr/src/app
+
+# کپی کردن وابستگی‌ها از مرحله قبل
+COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+# کپی کردن تمام سورس کد پروژه
+COPY . .
+
+# **تغییر کلیدی:** اجرای مستقیم دستور build با استفاده از npm bin برای پیدا کردن مسیر صحیح.
+# این روش قوی‌تر از مسیردهی مستقیم است و مشکل "not found" را حل می‌کند.
+RUN $(npm bin)/nest build ${SERVICE_NAME}
+
+
+# --- STAGE 3: Production Runner ---
+# ساخت ایمیج نهایی که بسیار سبک و امن است.
+FROM node:18-alpine AS runner
+ARG SERVICE_NAME
+WORKDIR /usr/src/app
+
+# ایجاد کاربر غیر روت برای افزایش امنیت
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# کپی کردن فقط وابستگی‌های پروداکشن
+COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+# کپی کردن فایل‌های بیلد شده از مرحله builder
+COPY --from=builder /usr/src/app/dist/services/${SERVICE_NAME} ./dist
+# کپی کردن package.json سرویس برای اجرای صحیح
+COPY services/${SERVICE_NAME}/package.json .
+
+EXPOSE 3000
+CMD ["node", "dist/main"]

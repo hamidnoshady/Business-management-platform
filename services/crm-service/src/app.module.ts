@@ -1,18 +1,37 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule } from '@nestjs/config';
-
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CustomersModule } from './customers/customers.module';
+import { Customer } from './customers/entities/customer.entity';
+import { AuthModule } from './auth/auth.module'; // ماژول مشترک برای احراز هویت
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    // ConfigModule is needed because our shared JwtStrategy depends on ConfigService
+    // ماژول برای مدیریت متغیرهای محیطی
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    // پیکربندی داینامیک TypeORM برای اتصال به دیتابیس
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DATABASE_HOST'),
+        port: configService.get<number>('DATABASE_PORT'),
+        username: configService.get<string>('DATABASE_USER'),
+        password: configService.get<string>('DATABASE_PASSWORD'),
+        database: configService.get<string>('DATABASE_NAME'),
+        // وارد کردن مستقیم Entity ها
+        entities: [Customer],
+        synchronize: true,
+      }),
+    }),
+    // ماژول‌های اصلی برنامه
+    CustomersModule,
+    AuthModule, // برای استفاده از JwtStrategy و Guard
   ],
-  // No controllers or custom services are needed here
-  providers: [JwtStrategy], // Only provide the strategy to validate incoming tokens
-  exports: [PassportModule],
+  controllers: [],
+  providers: [],
 })
-export class AuthModule {}
+export class AppModule {}

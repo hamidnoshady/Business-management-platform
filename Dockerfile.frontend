@@ -1,0 +1,45 @@
+# Dockerfile نهایی و خودکفا برای کلاینت وب (Next.js)
+
+# --- STAGE 1: Dependencies ---
+FROM node:18-alpine AS dependencies
+WORKDIR /usr/src/app
+
+# کپی کردن تمام فایل‌های package.json
+COPY package.json package-lock.json* ./
+COPY apps/components/package.json ./apps/components/
+COPY apps/stores/package.json ./apps/stores/
+COPY apps/web-client/package.json ./apps/web-client/
+COPY packages/common/package.json ./packages/common/
+COPY services/auth-service/package.json ./services/auth-service/
+COPY services/crm-service/package.json ./services/crm-service/
+COPY services/sales-service/package.json ./services/sales-service/
+
+# اجرای npm ci برای نصب تمیز وابستگی‌ها
+RUN npm ci --legacy-peer-deps
+
+
+# --- STAGE 2: Builder ---
+FROM node:18-alpine AS builder
+WORKDIR /usr/src/app
+
+COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+COPY . .
+
+RUN npm run build --workspace=web-client
+
+
+# --- STAGE 3: Production Runner ---
+FROM node:18-alpine AS runner
+WORKDIR /usr/src/app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=dependencies /usr/src/app/node_modules ./node_modules
+COPY apps/web-client/package.json .
+COPY --from=builder /usr/src/app/apps/web-client/.next ./apps/web-client/.next
+COPY --from=builder /usr/src/app/apps/web-client/public ./apps/web-client/public
+
+USER appuser
+EXPOSE 3000
+
+CMD ["npm", "run", "start", "--workspace=web-client"]

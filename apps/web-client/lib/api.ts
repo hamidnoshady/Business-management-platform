@@ -1,32 +1,40 @@
+import axios from 'axios';
+import { useAuthStore } from '../../stores/auth.store';
 
-import { useAuthStore } from '@/stores/auth.store';
+/**
+ * یک instance از axios برای هر سرویس ایجاد می‌کنیم.
+ * این کار به ما اجازه می‌دهد baseURL مجزا برای هرکدام داشته باشیم
+ * و مدیریت Interceptor ها (مثلا برای افزودن توکن) ساده‌تر شود.
+ */
 
-const API_URLS = {
-  AUTH: 'http://localhost:3001',
-  CRM: 'http://localhost:3002',
-  SALES: 'http://localhost:3003',
-  CMS: 'http://localhost:3004',
+export const authApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_AUTH_API_URL,
+});
+
+export const crmApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_CRM_API_URL,
+});
+
+export const salesApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_SALES_API_URL,
+});
+
+/**
+ * Interceptor برای درخواست‌ها
+ * این تابع قبل از ارسال هر درخواست به API های CRM و Sales اجرا می‌شود.
+ * توکن JWT را از Zustand (auth.store.ts) می‌خواند و به هدر Authorization اضافه می‌کند.
+ */
+const injectToken = (config: any) => {
+    // دسترسی به توکن از طریق Zustand store
+    const token = useAuthStore.getState().token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 };
 
-async function apiFetch(service: keyof typeof API_URLS, path: string, options: RequestInit = {}) {
-  const token = useAuthStore.getState().token;
-  const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
+crmApi.interceptors.request.use(injectToken);
+salesApi.interceptors.request.use(injectToken);
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
-  const response = await fetch(`${API_URLS[service]}/${path}`, { ...options, headers });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(errorData.message || 'یک خطای ناشناخته رخ داد');
-  }
-
-  if (response.status === 204 || response.headers.get('content-length') === '0') return null;
-  
-  return response.json();
-}
-export default apiFetch;
-
+// شما می‌توانید Interceptor های دیگری برای مدیریت خطاها (response interceptors) نیز اضافه کنید.
+// برای مثال، اگر خطای 401 (Unauthorized) دریافت شد، کاربر را به صفحه لاگین هدایت کنید.
