@@ -77,4 +77,4 @@ EXPOSE 3000
 
 # The command to run the application
 # It starts the built service using node.
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/main"]

@@ -1,11 +1,11 @@
 
 'use client';
-import { useAuthStore } from "@/stores/auth.store";
+import { useAuthStore } from "../../../stores/auth.store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
+import { Sidebar } from "../../../components/layout/sidebar";
+import { Header } from "../../../components/layout/header";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

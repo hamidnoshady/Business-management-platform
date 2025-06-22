@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../stores/auth.store';
 
 /**
@@ -38,3 +38,30 @@ salesApi.interceptors.request.use(injectToken);
 
 // شما می‌توانید Interceptor های دیگری برای مدیریت خطاها (response interceptors) نیز اضافه کنید.
 // برای مثال، اگر خطای 401 (Unauthorized) دریافت شد، کاربر را به صفحه لاگین هدایت کنید.
+
+type ServiceName = 'AUTH' | 'CRM' | 'SALES';
+
+const apis = {
+  AUTH: authApi,
+  CRM: crmApi,
+  SALES: salesApi,
+};
+
+export const apiFetch = async (service: ServiceName, url: string, options: AxiosRequestConfig = {}) => {
+  const api = apis[service];
+  if (!api) {
+    throw new Error(`Invalid service name: ${service}`);
+  }
+  try {
+    const response = await api({
+      url,
+      ...options,
+    });
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || 'An error occurred during the API request.');
+    }
+    throw new Error(error.message || 'An unknown error occurred.');
+  }
+};

@@ -1,10 +1,10 @@
 
 'use client';
 import { useEffect, useState } from 'react';
-import apiFetch from '@/lib/api';
+import { apiFetch } from '../../../lib/api';
 import toast from 'react-hot-toast';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/layout/ui/table";
+import { Button } from '../../../../components/layout/ui/button';
 
 interface Customer {
   id: string;

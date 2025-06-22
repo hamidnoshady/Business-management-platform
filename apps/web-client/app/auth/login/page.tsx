@@ -2,14 +2,14 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import apiFetch from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { useAuthStore } from '@/stores/auth.store';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useAuthStore } from '../../../../stores/auth.store';
+import { Button } from '../../../../components/layout/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../../components/layout/ui/card';
+import { Input } from '../../../../components/layout/ui/input';
+import { Label } from '../../../../components/layout/ui/label';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       const data = await apiFetch('AUTH', 'auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        data: { email, password },
       });
       setToken(data.accessToken);
       const profile = await apiFetch('AUTH', 'auth/profile');

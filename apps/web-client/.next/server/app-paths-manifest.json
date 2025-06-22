@@ -1,3 +1,4 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a04b8d60a95194a2dc18ad78206afa7f288106a392a6ce07490e62982d73382b
-size 280
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js"
+}
