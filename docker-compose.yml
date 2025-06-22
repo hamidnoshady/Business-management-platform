@@ -1,5 +1,5 @@
 services:
-  # ------ سرویس‌های پایگاه داده ------
+  # ------ Database Services ------
   postgres-auth:
     image: postgres:13
     container_name: postgres-auth
@@ -57,19 +57,17 @@ services:
     networks:
       - business_platform_net
 
-  # ------ سرویس‌های بک‌اند ------
+  # ------ Backend Services ------
   auth-service:
     build:
       context: .
       dockerfile: Dockerfile.backend
       args:
         SERVICE_NAME: auth-service
-    command: npm run start:prod --workspace=auth-service
+    # The command now simply starts the application, as the build is part of the image.
+    command: node dist/main
     ports:
       - "3001:3000"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
     environment:
       - DATABASE_HOST=postgres-auth
       - DATABASE_PORT=5432
@@ -90,12 +88,10 @@ services:
       dockerfile: Dockerfile.backend
       args:
         SERVICE_NAME: crm-service
-    command: npm run start:prod --workspace=crm-service
+    # The command now simply starts the application.
+    command: node dist/main
     ports:
       - "3002:3000"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
     environment:
       - DATABASE_HOST=postgres-crm
       - DATABASE_PORT=5432
@@ -116,12 +112,10 @@ services:
       dockerfile: Dockerfile.backend
       args:
         SERVICE_NAME: sales-service
-    command: npm run start:prod --workspace=sales-service
+    # The command now simply starts the application.
+    command: node dist/main
     ports:
       - "3003:3000"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
     environment:
       - DATABASE_HOST=postgres-sales
       - DATABASE_PORT=5432
@@ -136,7 +130,7 @@ services:
     networks:
       - business_platform_net
 
-  # ------ سرویس فرانت‌اند ------
+  # ------ Frontend Service ------
   web-client:
     build:
       context: .
@@ -154,13 +148,13 @@ services:
     networks:
       - business_platform_net
 
-# ------ تعریف Volume ها برای نگهداری داده‌ها ------
+# ------ Volume Definitions ------
 volumes:
   auth_db_data:
   crm_db_data:
   sales_db_data:
 
-# ------ تعریف شبکه مشترک ------
+# ------ Network Definition ------
 networks:
   business_platform_net:
     driver: bridge

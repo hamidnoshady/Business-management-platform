@@ -1,16 +1,19 @@
-# Shared Dockerfile for backend services
+# Dockerfile.backend
 
-# 1. Stage: Install dependencies
-# This stage installs all npm dependencies. It's a separate stage to leverage Docker's caching.
-# It only re-runs if the package.json or package-lock.json files change.
+# Stage 1: Install all monorepo dependencies with network resilience
 FROM node:18-alpine AS dependencies
-
-# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy all package.json and package-lock.json files from the monorepo
-# A wildcard is used for package-lock.json to handle cases where it might not exist initially.
+# Set npm config to use the official registry and improve network resilience
+# This helps with network errors like ECONNRESET
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-timeout 60000
+
+# Copy all package.json files to leverage Docker cache
 COPY package.json package-lock.json* ./
+
+# Copy package.json for all workspaces
 COPY apps/components/package.json ./apps/components/
 COPY apps/stores/package.json ./apps/stores/
 COPY apps/web-client/package.json ./apps/web-client/
@@ -19,61 +22,47 @@ COPY services/auth-service/package.json ./services/auth-service/
 COPY services/crm-service/package.json ./services/crm-service/
 COPY services/sales-service/package.json ./services/sales-service/
 
-# Explicitly unset any proxy settings that might be inherited from the host environment.
-RUN npm config delete proxy
-RUN npm config delete https-proxy
-# Set the registry to a reliable public mirror to bypass network issues.
-RUN npm config set registry https://registry.npmmirror.com/
-
-# Install dependencies using 'npm install'.
-# --legacy-peer-deps is used to avoid issues with peer dependency conflicts.
+# Install all dependencies for the monorepo
 RUN npm install --legacy-peer-deps
 
-# 2. Stage: Build the application
-# This stage builds the specific service.
+
+# Stage 2: Build the specific service
 FROM node:18-alpine AS builder
-
-# Argument to specify which service to build
 ARG SERVICE_NAME
-
 WORKDIR /usr/src/app
 
-# Copy the entire monorepo source code first.
+# Copy all source code from the host
 COPY . .
 
-# Now, copy the clean, correctly-installed node_modules from the 'dependencies' stage.
+# Copy installed node_modules from the 'dependencies' stage
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 
-# Build the specified service using the direct path to the executable.
-RUN /usr/src/app/node_modules/.bin/nest build ${SERVICE_NAME}
+# Build the specific service using its workspace script
+RUN npm run build --workspace=${SERVICE_NAME}
 
-# 3. Stage: Production image
-# This is the final, lightweight image that will be run.
+# Prune development dependencies to create smaller production node_modules
+RUN npm prune --production
+
+
+# Stage 3: Production image - smaller and more secure
 FROM node:18-alpine AS runner
-
-# Argument to specify which service this container is for
-ARG SERVICE_NAME
-
 WORKDIR /usr/src/app
 
-# Create a non-root user and group for security best practices
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+ARG SERVICE_NAME
 
-# Copy only the necessary production dependencies from the 'dependencies' stage
-COPY --from=dependencies /usr/src/app/node_modules ./node_modules
-# Copy the built application from the 'builder' stage.
-# For a NestJS monorepo, the output is in a subfolder within dist.
-COPY --from=builder /usr/src/app/dist/services/${SERVICE_NAME} /usr/src/app/dist/
+# Set environment to production
+ENV NODE_ENV=production
 
-# Change ownership of the app files to the non-root user
-RUN chown -R appuser:appgroup /usr/src/app
+# Copy pruned production node_modules from builder stage
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 
-# Switch to the non-root user
-USER appuser
+# Copy the built application from the builder stage
+# The build output for a NestJS workspace is inside the workspace folder
+COPY --from=builder /usr/src/app/services/${SERVICE_NAME}/dist ./dist
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Copy the root package.json to resolve modules correctly at runtime
+COPY --from=builder /usr/src/app/package.json ./package.json
 
-# The command to run the application
-# It starts the built service using node.
-CMD ["node", "dist/services/${SERVICE_NAME}/main.js"]
+# Set the default command to run the application
+# This will be overridden by the command in docker-compose.yml, but it's good practice.
+CMD [ "node", "dist/main" ]
