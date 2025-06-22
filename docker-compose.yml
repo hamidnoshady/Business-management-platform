@@ -64,7 +64,7 @@ services:
       dockerfile: Dockerfile.backend
       args:
         SERVICE_NAME: auth-service
-    command: npm run start:dev --workspace=auth-service
+    command: npm run start:prod --workspace=auth-service
     ports:
       - "3001:3000"
     volumes:
@@ -90,7 +90,7 @@ services:
       dockerfile: Dockerfile.backend
       args:
         SERVICE_NAME: crm-service
-    command: npm run start:dev --workspace=crm-service
+    command: npm run start:prod --workspace=crm-service
     ports:
       - "3002:3000"
     volumes:
@@ -116,7 +116,7 @@ services:
       dockerfile: Dockerfile.backend
       args:
         SERVICE_NAME: sales-service
-    command: npm run start:dev --workspace=sales-service
+    command: npm run start:prod --workspace=sales-service
     ports:
       - "3003:3000"
     volumes:

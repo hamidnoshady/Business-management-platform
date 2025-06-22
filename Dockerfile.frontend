@@ -21,7 +21,7 @@ RUN npm config delete https-proxy
 RUN npm config set registry https://registry.npmmirror.com/
 
 # اجرای npm ci برای نصب تمیز وابستگی‌ها
-RUN npm ci --legacy-peer-deps
+RUN npm config set registry https://registry.npmmirror.com/ && npm ci --legacy-peer-deps
 
 
 # --- STAGE 2: Builder ---

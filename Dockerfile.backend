@@ -45,7 +45,6 @@ COPY . .
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 
 # Build the specified service using the direct path to the executable.
-# This is the most reliable method and avoids potential npx/shell path issues.
 RUN /usr/src/app/node_modules/.bin/nest build ${SERVICE_NAME}
 
 # 3. Stage: Production image
@@ -64,7 +63,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 # Copy the built application from the 'builder' stage.
 # For a NestJS monorepo, the output is in a subfolder within dist.
-COPY --from=builder /usr/src/app/dist/services/${SERVICE_NAME} ./dist
+COPY --from=builder /usr/src/app/dist/services/${SERVICE_NAME} /usr/src/app/dist/
 
 # Change ownership of the app files to the non-root user
 RUN chown -R appuser:appgroup /usr/src/app
@@ -77,4 +76,4 @@ EXPOSE 3000
 
 # The command to run the application
 # It starts the built service using node.
-CMD ["node", "dist/main"]
+CMD ["node", "dist/services/${SERVICE_NAME}/main.js"]
