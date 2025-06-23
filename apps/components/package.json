@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1e90c3f444fc61d93b34416cfd8d60b9d83fa5c043f8ce037b9519ad69153fed
-size 490
+{
+  "name": "components",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {},
+  "devDependencies": {}
+}

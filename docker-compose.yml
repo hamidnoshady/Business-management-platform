@@ -57,74 +57,37 @@ services:
     networks:
       - business_platform_net
 
-  # ------ Backend Services ------
-  auth-service:
+  # ------ Backend Service ------
+  backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-      args:
-        SERVICE_NAME: auth-service
-    # The command now simply starts the application, as the build is part of the image.
+      context: ./backend
+      dockerfile: Dockerfile
     command: node dist/main
     ports:
       - "3001:3000"
     environment:
-      - DATABASE_HOST=postgres-auth
-      - DATABASE_PORT=5432
-      - DATABASE_USER=admin
-      - DATABASE_PASSWORD=admin
-      - DATABASE_NAME=auth_db
+      - DATABASE_HOST_AUTH=postgres-auth
+      - DATABASE_PORT_AUTH=5432
+      - DATABASE_USER_AUTH=admin
+      - DATABASE_PASSWORD_AUTH=admin
+      - DATABASE_NAME_AUTH=auth_db
+      - DATABASE_HOST_CRM=postgres-crm
+      - DATABASE_PORT_CRM=5432
+      - DATABASE_USER_CRM=admin
+      - DATABASE_PASSWORD_CRM=admin
+      - DATABASE_NAME_CRM=crm_db
+      - DATABASE_HOST_SALES=postgres-sales
+      - DATABASE_PORT_SALES=5432
+      - DATABASE_USER_SALES=admin
+      - DATABASE_PASSWORD_SALES=admin
+      - DATABASE_NAME_SALES=sales_db
       - JWT_SECRET=aVeryStrongAndSecretKey123!@#ChangeMe
       - PORT=3000
     depends_on:
       postgres-auth:
         condition: service_healthy
-    networks:
-      - business_platform_net
-
-  crm-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-      args:
-        SERVICE_NAME: crm-service
-    # The command now simply starts the application.
-    command: node dist/main
-    ports:
-      - "3002:3000"
-    environment:
-      - DATABASE_HOST=postgres-crm
-      - DATABASE_PORT=5432
-      - DATABASE_USER=admin
-      - DATABASE_PASSWORD=admin
-      - DATABASE_NAME=crm_db
-      - JWT_SECRET=aVeryStrongAndSecretKey123!@#ChangeMe
-      - PORT=3000
-    depends_on:
       postgres-crm:
         condition: service_healthy
-    networks:
-      - business_platform_net
-
-  sales-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-      args:
-        SERVICE_NAME: sales-service
-    # The command now simply starts the application.
-    command: node dist/main
-    ports:
-      - "3003:3000"
-    environment:
-      - DATABASE_HOST=postgres-sales
-      - DATABASE_PORT=5432
-      - DATABASE_USER=admin
-      - DATABASE_PASSWORD=admin
-      - DATABASE_NAME=sales_db
-      - JWT_SECRET=aVeryStrongAndSecretKey123!@#ChangeMe
-      - PORT=3000
-    depends_on:
       postgres-sales:
         condition: service_healthy
     networks:
@@ -134,17 +97,14 @@ services:
   web-client:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile.frontend.dev
     command: npm run dev --workspace=web-client
     ports:
       - "3000:3000"
     volumes:
       - .:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
-      - auth-service
-      - crm-service
-      - sales-service
+      - backend
     networks:
       - business_platform_net
 
