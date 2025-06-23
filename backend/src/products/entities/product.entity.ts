@@ -10,4 +10,7 @@ export class Product {
 
   @Column()
   price: number;
+
+  @Column()
+  tenantId: string;
 }

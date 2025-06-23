@@ -10,4 +10,10 @@ export class User {
 
   @Column()
   password_hash: string;
+
+  @Column()
+  tenantId: string;
+
+  @Column({ type: 'simple-array', default: ['user'] })
+  roles: string[];
 }
