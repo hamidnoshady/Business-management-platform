@@ -14,7 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error('برای دسترسی به این صفحه باید وارد شوید.');
-      router.replace("/login");
+      router.replace("/auth/login");
     }
   }, [isAuthenticated, router]);
 

@@ -21,7 +21,6 @@ import { OrderItem } from 'src/orders/entities/order-item.entity';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
-      name: 'auth',
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

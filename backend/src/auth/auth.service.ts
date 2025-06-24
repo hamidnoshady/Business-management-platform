@@ -10,13 +10,26 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
-    if (user && (await bcrypt.compare(pass, user.password_hash))) {
-      const { password_hash, ...result } = user;
-      return result;
+  async validateUser(email: string, pass: string): Promise<any> {
+    console.log(`[AuthService] Attempting to validate user: ${email}`);
+    const user = await this.usersService.findOne(email);
+
+    if (!user) {
+      console.log(`[AuthService] User not found: ${email}`);
+      return null;
     }
-    return null;
+    console.log(`[AuthService] User found: ${user.username}`);
+
+    const isPasswordMatching = await bcrypt.compare(pass, user.password_hash);
+
+    if (!isPasswordMatching) {
+      console.log(`[AuthService] Password does not match for user: ${email}`);
+      return null;
+    }
+
+    console.log(`[AuthService] User validated successfully: ${email}`);
+    const { password_hash, ...result } = user;
+    return result;
   }
 
   async login(user: any) {
@@ -24,10 +37,14 @@ export class AuthService {
       username: user.username,
       sub: user.id,
       roles: user.roles,
-      tenantId: user.tenantId,
+      tenantId: user.tenant.id,
     };
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+  
+  getProfile(user: any) {
+    return this.usersService.findOne(user.username);
   }
 }

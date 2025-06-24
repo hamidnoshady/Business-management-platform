@@ -26,8 +26,12 @@ export default function LoginPage() {
         method: 'POST',
         data: { email, password },
       });
-      setToken(data.accessToken);
-      const profile = await apiFetch('AUTH', 'auth/profile');
+      setToken(data.access_token);
+      const profile = await apiFetch('AUTH', 'auth/profile', {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      });
       setUser(profile);
       toast.success('ورود با موفقیت انجام شد!');
       router.push('/dashboard');

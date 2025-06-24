@@ -5,14 +5,14 @@ import { AppModule } from './app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Tenant } from './tenants/entities/tenant.entity';
 import { User } from './users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
   try {
-    const tenantRepository = app.get(getRepositoryToken(Tenant, 'auth'));
-    const userRepository = app.get(getRepositoryToken(User, 'auth'));
+    const tenantRepository = app.get(getRepositoryToken(Tenant));
+    const userRepository = app.get(getRepositoryToken(User));
 
     // --- 1. Create a default tenant ---
     console.log('Creating Admin Tenant...');
@@ -29,14 +29,14 @@ async function seed() {
 
     // --- 2. Create a default admin user ---
     console.log('Creating Admin User...');
-    const adminUserExists = await userRepository.findOne({ where: { username: 'admin' } });
+    const adminUserExists = await userRepository.findOne({ where: { username: 'admin@example.com' } });
 
     if (!adminUserExists) {
         const hashedPassword = await bcrypt.hash('password', 10);
       
         // Create the user instance and explicitly associate it with the tenant
         const adminUser = userRepository.create({
-          username: 'admin',
+          username: 'admin@example.com',
           password_hash: hashedPassword,
           // Associate the user with the created tenant
           tenant: adminTenant, 

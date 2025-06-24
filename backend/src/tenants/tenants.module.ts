@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tenant } from './entities/tenant.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tenant], 'auth')],
+  imports: [TypeOrmModule.forFeature([Tenant])],
   providers: [TenantsService],
   exports: [TenantsService],
 })

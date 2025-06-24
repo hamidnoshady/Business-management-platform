@@ -33,6 +33,7 @@ const injectToken = (config: any) => {
     return config;
 };
 
+authApi.interceptors.request.use(injectToken);
 crmApi.interceptors.request.use(injectToken);
 salesApi.interceptors.request.use(injectToken);
 

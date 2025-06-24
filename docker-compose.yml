@@ -62,7 +62,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: pnpm run start:prod
+    command: sh -c "npm run seed && npm run start:prod"
     ports:
       - "3001:3000"
     environment:

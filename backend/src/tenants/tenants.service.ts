@@ -6,7 +6,7 @@ import { Tenant } from './entities/tenant.entity';
 @Injectable()
 export class TenantsService {
   constructor(
-    @InjectRepository(Tenant, 'auth')
+    @InjectRepository(Tenant)
     private tenantsRepository: Repository<Tenant>,
   ) {}
 
