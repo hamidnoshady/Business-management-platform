@@ -19,6 +19,10 @@ export const salesApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SALES_API_URL,
 });
 
+export const cmsApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_CMS_API_URL,
+});
+
 /**
  * Interceptor برای درخواست‌ها
  * این تابع قبل از ارسال هر درخواست به API های CRM و Sales اجرا می‌شود.
@@ -36,16 +40,18 @@ const injectToken = (config: any) => {
 authApi.interceptors.request.use(injectToken);
 crmApi.interceptors.request.use(injectToken);
 salesApi.interceptors.request.use(injectToken);
+cmsApi.interceptors.request.use(injectToken);
 
 // شما می‌توانید Interceptor های دیگری برای مدیریت خطاها (response interceptors) نیز اضافه کنید.
 // برای مثال، اگر خطای 401 (Unauthorized) دریافت شد، کاربر را به صفحه لاگین هدایت کنید.
 
-type ServiceName = 'AUTH' | 'CRM' | 'SALES';
+type ServiceName = 'AUTH' | 'CRM' | 'SALES' | 'CMS';
 
 const apis = {
   AUTH: authApi,
   CRM: crmApi,
   SALES: salesApi,
+  CMS: cmsApi,
 };
 
 export const apiFetch = async (service: ServiceName, url: string, options: AxiosRequestConfig = {}) => {

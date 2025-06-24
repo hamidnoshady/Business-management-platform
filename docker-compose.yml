@@ -101,6 +101,11 @@ services:
     command: npm run dev --workspace=web-client
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_AUTH_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_CRM_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_SALES_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_CMS_API_URL=http://localhost:3001
     volumes:
       - .:/usr/src/app
     depends_on:
