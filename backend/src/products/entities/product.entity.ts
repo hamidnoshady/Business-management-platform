@@ -12,5 +12,5 @@ export class Product {
   price: number;
 
   @Column()
-  tenantId: string;
+  tenantId: number;
 }

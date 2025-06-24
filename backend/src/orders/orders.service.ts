@@ -16,7 +16,7 @@ export class OrdersService {
   }
 
   async findOneWithDetails(id: string, user: User): Promise<Order> {
-    const { tenantId } = user;
+    const tenantId = user.tenant.id;
     const queryBuilder = this.ordersRepository.createQueryBuilder('order');
 
     queryBuilder

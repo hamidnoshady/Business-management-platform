@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y g++ make python3
 # Install pnpm
 RUN npm install -g pnpm
 
+# Install bcrypt and its types
+RUN pnpm install bcrypt @types/bcrypt
+
 # Install any needed packages specified in package.json
 RUN pnpm install --force
 

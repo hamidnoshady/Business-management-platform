@@ -1,34 +1,62 @@
-import { createConnection } from 'typeorm';
+// backend/src/seed.ts
+
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Tenant } from './tenants/entities/tenant.entity';
 import { User } from './users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
 async function seed() {
-  const connection = await createConnection({
-    type: 'postgres',
-    host: process.env.DATABASE_HOST_AUTH,
-    port: parseInt(process.env.DATABASE_PORT_AUTH, 10),
-    username: process.env.DATABASE_USER_AUTH,
-    password: process.env.DATABASE_PASSWORD_AUTH,
-    database: process.env.DATABASE_NAME_AUTH,
-    entities: [User],
-    synchronize: true,
-  });
+  const app = await NestFactory.createApplicationContext(AppModule);
 
-  const userRepository = connection.getRepository(User);
+  try {
+    const tenantRepository = app.get(getRepositoryToken(Tenant, 'auth'));
+    const userRepository = app.get(getRepositoryToken(User, 'auth'));
 
-  const adminUser = await userRepository.findOne({ where: { username: 'admin' } });
+    // --- 1. Create a default tenant ---
+    console.log('Creating Admin Tenant...');
+    // Check if tenant already exists
+    let adminTenant = await tenantRepository.findOne({ where: { name: 'Admin Tenant' } });
+    if (!adminTenant) {
+      adminTenant = tenantRepository.create({ name: 'Admin Tenant' });
+      await tenantRepository.save(adminTenant);
+      console.log('Admin Tenant created successfully.');
+    } else {
+      console.log('Admin Tenant already exists.');
+    }
 
-  if (!adminUser) {
-    const newUser = new User();
-    newUser.username = 'admin';
-    newUser.password_hash = await bcrypt.hash('admin', 10);
-    await userRepository.save(newUser);
-    console.log('Admin user created');
-  } else {
-    console.log('Admin user already exists');
+
+    // --- 2. Create a default admin user ---
+    console.log('Creating Admin User...');
+    const adminUserExists = await userRepository.findOne({ where: { username: 'admin' } });
+
+    if (!adminUserExists) {
+        const hashedPassword = await bcrypt.hash('password', 10);
+      
+        // Create the user instance and explicitly associate it with the tenant
+        const adminUser = userRepository.create({
+          username: 'admin',
+          password_hash: hashedPassword,
+          // Associate the user with the created tenant
+          tenant: adminTenant, 
+          roles: ['admin'], 
+        });
+    
+        await userRepository.save(adminUser);
+        console.log('Admin User created successfully.');
+    } else {
+        console.log('Admin user already exists.');
+    }
+    
+  } catch (error) {
+    console.error('Seeding failed!');
+    console.error(error);
+    process.exit(1);
+  } finally {
+    console.log('Seeding completed successfully.');
+    process.exit(0);
   }
-
-  await connection.close();
 }
 
 seed();

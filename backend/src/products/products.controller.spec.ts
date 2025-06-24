@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 const mockUser: User = {
   id: 1,
-  tenantId: 'tenant-123',
+  tenant: { id: 1, name: 'Test Tenant', users: [] },
   username: 'testuser',
   password_hash: 'hashedpassword',
   roles: ['user'],

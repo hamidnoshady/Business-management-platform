@@ -9,7 +9,7 @@ import { NotFoundException } from '@nestjs/common';
 
 const mockUser: User = {
   id: 1,
-  tenantId: 'tenant-123',
+  tenant: { id: 1, name: 'Test Tenant', users: [] },
   username: 'testuser',
   password_hash: 'hashedpassword',
   roles: ['user'],
@@ -19,7 +19,7 @@ const mockProduct: Product = {
   id: 1,
   name: 'Test Product',
   price: 100,
-  tenantId: mockUser.tenantId,
+  tenantId: mockUser.tenant.id,
 };
 
 const createProductDto: CreateProductDto = {
@@ -60,7 +60,7 @@ describe('ProductsService', () => {
 
   describe('create', () => {
     it('should create and save a new product with the correct tenantId', async () => {
-      const createdProduct = { ...createProductDto, tenantId: mockUser.tenantId };
+      const createdProduct = { ...createProductDto, tenantId: mockUser.tenant.id };
       mockProductRepository.create.mockReturnValue(createdProduct);
       mockProductRepository.save.mockResolvedValue(createdProduct as any);
 
@@ -68,7 +68,7 @@ describe('ProductsService', () => {
 
       expect(repository.create).toHaveBeenCalledWith({
         ...createProductDto,
-        tenantId: mockUser.tenantId,
+        tenantId: mockUser.tenant.id,
       });
       expect(repository.save).toHaveBeenCalledWith(createdProduct);
       expect(result).toEqual(createdProduct);
@@ -79,7 +79,7 @@ describe('ProductsService', () => {
     it('should find all products for the given tenant', async () => {
       await service.findAllForTenant(mockUser);
       expect(repository.find).toHaveBeenCalledWith({
-        where: { tenantId: mockUser.tenantId },
+        where: { tenantId: mockUser.tenant.id },
       });
     });
   });
@@ -87,7 +87,7 @@ describe('ProductsService', () => {
   describe('findOne', () => {
     it('should find a product by id and tenantId', async () => {
       await service.findOne(1, mockUser);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1, tenantId: mockUser.tenantId } });
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1, tenantId: mockUser.tenant.id } });
     });
 
     it('should throw a NotFoundException if the product is not found', async () => {

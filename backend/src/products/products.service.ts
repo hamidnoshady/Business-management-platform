@@ -9,26 +9,26 @@ import { User } from '../users/entities/user.entity';
 @Injectable()
 export class ProductsService {
   constructor(
-    @InjectRepository(Product)
+    @InjectRepository(Product, 'sales')
     private productsRepository: Repository<Product>,
   ) {}
 
   create(createProductDto: CreateProductDto, user: User) {
     const newProduct = this.productsRepository.create({
       ...createProductDto,
-      tenantId: user.tenantId,
+      tenantId: user.tenant.id,
     });
     return this.productsRepository.save(newProduct);
   }
 
   findAllForTenant(user: User) {
     return this.productsRepository.find({
-      where: { tenantId: user.tenantId },
+      where: { tenantId: user.tenant.id },
     });
   }
 
   async findOne(id: number, user: User) {
-    const product = await this.productsRepository.findOne({ where: { id, tenantId: user.tenantId } });
+    const product = await this.productsRepository.findOne({ where: { id, tenantId: user.tenant.id } });
     if (!product) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
     }
